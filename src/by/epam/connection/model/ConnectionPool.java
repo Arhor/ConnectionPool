@@ -10,8 +10,6 @@ import java.sql.Statement;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import by.epam.connection.runner.Runner;
-
 public class ConnectionPool {
 	private static final Logger LOG = LogManager.getLogger(ConnectionPool.class);
 	
@@ -34,9 +32,12 @@ public class ConnectionPool {
 			LOG.info("Connection established\n");
 			Statement st = connection.createStatement();
 			ResultSet rs = st.executeQuery("SELECT * FROM `faculties`");
+			LOG.info(" id |             faculty\n");
+			LOG.info("----+------------------------------------------------\n");
 			while (rs.next()) {
-				String faculty = rs.getString("name_en");
-				LOG.info(faculty + "\n");
+				int id = rs.getInt(1);
+				String faculty = rs.getString(2);
+				LOG.info(id + " | " + faculty + "\n");
 			}
 		} catch (SQLException e) {
 			LOG.debug("SQL exception: ", e);
@@ -44,6 +45,7 @@ public class ConnectionPool {
 			if (connection != null) {
 				try {
 					connection.close();
+					LOG.info("connection closed\n");
 				} catch (SQLException e) {
 					LOG.debug("SQL exception: ", e);
 				}
