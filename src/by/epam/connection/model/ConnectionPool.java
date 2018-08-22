@@ -3,6 +3,8 @@ package by.epam.connection.model;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
 
 import org.apache.logging.log4j.LogManager;
@@ -15,26 +17,36 @@ public class ConnectionPool {
 	
 	public void initialize() {
 		Connection connection = null;
-		String dbAddress = "";
+		String url = "jdbc:mysql://localhost:3306/admission_committee"+
+                "?verifyServerCertificate=false"+
+                "&useSSL=false"+
+                "&requireSSL=false"+
+                "&useLegacyDatetimeCode=false"+
+                "&amp"+
+                "&serverTimezone=UTC";
 		try {
-			InetAddress address = InetAddress.getLocalHost();
-			dbAddress = address.getHostAddress();
-		} catch (UnknownHostException e) {
-			LOG.error("error: ", e);
-		}
-
-		try {
-			java.sql.DriverManager.registerDriver(); // find real driver name
+			java.sql.DriverManager.registerDriver(new com.mysql.cj.jdbc.Driver()); // find real driver name
 			// TODO: implement connection wrapper !!!
 			connection = java.sql.DriverManager.getConnection(
-					"jdbc:mysql:" + dbAddress + ":3306/admission_committee",
+					url,
 					"root",
 					"dragonlance");
-			
+			LOG.info("Connection established\n");
 			Statement st = connection.createStatement();
+			ResultSet rs = st.executeQuery("SELECT * FROM `faculties`");
+			while (rs.next()) {
+				String faculty = rs.getString("name_en");
+				LOG.info(faculty + "\n");
+			}
+		} catch (SQLException e) {
+			LOG.debug("SQL exception: ", e);
 		} finally {
 			if (connection != null) {
-				connection.close();
+				try {
+					connection.close();
+				} catch (SQLException e) {
+					LOG.debug("SQL exception: ", e);
+				}
 				// TODO: implement driver de-registration
 			}
 		}
