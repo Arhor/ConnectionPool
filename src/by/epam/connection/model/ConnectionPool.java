@@ -98,7 +98,7 @@ public enum ConnectionPool {
 		}
 	}
 	
-	public void getFaculties() {
+	public void findFaculties() {
 		Connection connection = getConnection();
 		Statement st = null;
 		try {
@@ -114,8 +114,7 @@ public enum ConnectionPool {
 			}
 			LOG.info("----+----------------------------------------------------+\n");
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			LOG.error("SQL exception: ", e);
 		} finally {
 			if (connection != null) {
 				releaseConnection(connection);
@@ -124,16 +123,22 @@ public enum ConnectionPool {
 	}
 	
 	public void closeConnections() {
-		for (Connection connection : availibleConnections) {
-			if (connection != null) {
-				try {
-					connection.close();
-					LOG.debug("connection closed...\n");
-				} catch (SQLException e) {
-					LOG.debug("SQL exception: ", e);
-				}
+		for (int i = 0; i < POOL_SIZE; i++) {
+			try {
+				availibleConnections.take().close();
+				LOG.info("connection closed...left: " 
+				+ (availibleConnections.size() 
+				+ usedConnections.size()) +"\n");
+			} catch (SQLException e) {
+				LOG.error("SQL exception: ", e);
+			} catch (InterruptedException e) {
+				LOG.error("Interrupted exception:", e);
+				Thread.currentThread().interrupt();
 			}
 		}
+		LOG.info("\nall connections closed...left: " 
+				+ (availibleConnections.size() 
+				+ usedConnections.size()) +"\n");
 		try {
 			java.sql.DriverManager.deregisterDriver(driver);
 			LOG.debug("driver deregistred...\n");
