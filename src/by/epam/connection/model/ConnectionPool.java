@@ -9,6 +9,7 @@ import java.util.ArrayDeque;
 import java.util.Properties;
 
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -31,7 +32,7 @@ public enum ConnectionPool {
 	private Properties prop;
 	private com.mysql.cj.jdbc.Driver driver;
 	
-	ArrayBlockingQueue<Connection> availibleConnections;
+	LinkedBlockingQueue<Connection> availibleConnections;
 	ArrayDeque<Connection> usedConnections;
 	
 	ConnectionPool() {
@@ -42,7 +43,7 @@ public enum ConnectionPool {
 			LOG.debug("loading properties error: ", e);
 		}
 		POOL_SIZE = Integer.parseInt(prop.getProperty(DB_POOLSIZE));
-		availibleConnections = new ArrayBlockingQueue<Connection>(POOL_SIZE);
+		availibleConnections = new LinkedBlockingQueue<Connection>();
 		usedConnections = new ArrayDeque<Connection>();
 		
 		try {
