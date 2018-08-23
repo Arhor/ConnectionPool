@@ -10,7 +10,8 @@ public class Runner {
 	private static final Logger LOG = LogManager.getLogger(Runner.class);
 
 	public static void main(String[] args) {
-		ConnectionPool cp = new ConnectionPool();
-		cp.initialize();
+		ConnectionPool cp = ConnectionPool.SINGLTONE;
+		cp.getFaculties();
+		cp.closeConnections();
 	}
 }
