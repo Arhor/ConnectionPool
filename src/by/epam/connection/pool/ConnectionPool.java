@@ -1,4 +1,4 @@
-package by.epam.connection.model;
+package by.epam.connection.pool;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -13,8 +13,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import by.epam.connection.service.PropertiesHandler;
 
 public enum ConnectionPool {
 	

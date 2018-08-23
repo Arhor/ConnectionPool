@@ -1,4 +1,4 @@
-package by.epam.connection.service;
+package by.epam.connection.pool;
 
 import java.io.FileInputStream;
 import java.io.IOException;
