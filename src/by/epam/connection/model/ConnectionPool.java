@@ -29,15 +29,10 @@ public class ConnectionPool {
 			LOG.debug("loading properties error: ", e);
 		}
 		Connection connection = null;
-//		String url = "jdbc:mysql://localhost:3306/admission_committee"+
-//                "?verifyServerCertificate=false"+
-//                "&useSSL=false"+
-//                "&requireSSL=false"+
-//                "&useLegacyDatetimeCode=false"+
-//                "&amp"+
-//                "&serverTimezone=UTC";
+		com.mysql.cj.jdbc.Driver driver = null;
 		try {
-			java.sql.DriverManager.registerDriver(new com.mysql.cj.jdbc.Driver()); // find real driver name
+			driver = new com.mysql.cj.jdbc.Driver();
+			java.sql.DriverManager.registerDriver(driver);
 			// TODO: implement connection wrapper !!!
 			connection = java.sql.DriverManager.getConnection(
 					prop.getProperty(DB_URL),
@@ -63,7 +58,14 @@ public class ConnectionPool {
 				} catch (SQLException e) {
 					LOG.debug("SQL exception: ", e);
 				}
-				// TODO: implement driver de-registration
+			}
+			if (driver != null) {
+				try {
+					java.sql.DriverManager.deregisterDriver(driver);
+					LOG.info("driver deregistred\n");
+				} catch (SQLException e) {
+					LOG.debug("SQL exception: ", e);
+				}
 			}
 		}
 		
