@@ -34,12 +34,7 @@ public enum ConnectionPool {
 	ArrayDeque<Connection> usedConnections;
 	
 	ConnectionPool() {
-		try {
-			prop = PropertiesHandler.readProperties("resources/connectionpool.properties");
-			LOG.info("properties successfully loaded...\n");
-		} catch (IOException e) {
-			LOG.debug("loading properties error: ", e);
-		}
+		prop = PropertiesHandler.readProperties();
 		POOL_SIZE = Integer.parseInt(prop.getProperty(DB_POOLSIZE));
 		availibleConnections = new LinkedBlockingQueue<Connection>();
 		usedConnections = new ArrayDeque<Connection>();

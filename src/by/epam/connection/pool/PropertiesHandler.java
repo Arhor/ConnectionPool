@@ -12,15 +12,16 @@ import org.apache.logging.log4j.Logger;
 public abstract class PropertiesHandler {
     
     private static final Logger LOG = LogManager.getLogger();
+    private static final String PROPERTY_PATH = "resources/connectionpool.properties";
 
-    public static Properties readProperties(String path) throws IOException{
-        try (FileInputStream fis = new FileInputStream(path)) {
+    public static Properties readProperties() {
+        try (FileInputStream fis = new FileInputStream(PROPERTY_PATH)) {
             Properties prop = new Properties();
             prop.load(fis);
             return prop;
         } catch (IOException e) {
             LOG.error("I/O exception occured: ", e);
-            throw e;
+            throw new RuntimeException();
         }
     }
 }
