@@ -1,14 +1,11 @@
 package by.epam.connection.pool;
 
 import java.sql.Connection;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.sql.DriverManager;
 
 import java.util.ArrayDeque;
 import java.util.Enumeration;
-import java.util.Iterator;
 import java.util.Properties;
 
 import java.util.concurrent.LinkedBlockingQueue;
@@ -92,30 +89,6 @@ public enum ConnectionPool {
 		} catch (InterruptedException e) {
 			LOG.error("Interrupted exception: ", e);
 			Thread.currentThread().interrupt();
-		}
-	}
-	
-	public void findFaculties() {
-		ProxyConnection proxyConnection = getConnection();
-		Statement st = null;
-		try {
-			st = proxyConnection.createStatement();
-			ResultSet rs = st.executeQuery("SELECT * FROM `faculties`");
-			LOG.info("----+----------------------------------------------------+\n");
-			LOG.info(" id |                       faculty                      |\n");
-			LOG.info("----+----------------------------------------------------+\n");
-			while (rs.next()) {
-				int id = rs.getInt(1);
-				String faculty = rs.getString(2);
-				LOG.info(String.format("%d | %-50s |%n", id, faculty));
-			}
-			LOG.info("----+----------------------------------------------------+\n");
-		} catch (SQLException e) {
-			LOG.error("SQL exception: ", e);
-		} finally {
-			if (proxyConnection != null) {
-				releaseConnection(proxyConnection);
-			}
 		}
 	}
 	
