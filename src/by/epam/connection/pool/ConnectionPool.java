@@ -1,22 +1,26 @@
 package by.epam.connection.pool;
 
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.DriverManager;
+
 import java.util.ArrayDeque;
+import java.util.Enumeration;
+import java.util.Iterator;
 import java.util.Properties;
 
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+
+import com.mysql.cj.jdbc.Driver;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public enum ConnectionPool {
 	
-	SINGLTONE;
+	POOL;
 	
 	private final Logger LOG = LogManager.getLogger(ConnectionPool.class);
 	
@@ -28,46 +32,45 @@ public enum ConnectionPool {
 	public final int POOL_SIZE;
 	
 	private Properties prop;
-	private com.mysql.cj.jdbc.Driver driver;
+	private Driver driver;
 	
-	LinkedBlockingQueue<Connection> availibleConnections;
-	ArrayDeque<Connection> usedConnections;
+	LinkedBlockingQueue<ProxyConnection> availibleConnections;
+	ArrayDeque<ProxyConnection> usedConnections;
 	
 	ConnectionPool() {
 		prop = PropertiesHandler.readProperties();
 		POOL_SIZE = Integer.parseInt(prop.getProperty(DB_POOLSIZE));
-		availibleConnections = new LinkedBlockingQueue<Connection>();
-		usedConnections = new ArrayDeque<Connection>();
-		
+		availibleConnections = new LinkedBlockingQueue<ProxyConnection>();
+		usedConnections = new ArrayDeque<ProxyConnection>();
 		try {
-			driver = new com.mysql.cj.jdbc.Driver();
-			java.sql.DriverManager.registerDriver(driver);
-			LOG.debug("driver registred...\n");
+			driver = new Driver();
+			DriverManager.registerDriver(driver);
+			LOG.info("driver " + driver + " registred...\n");
 		} catch (SQLException e) {
-			LOG.debug("SQL exception: ", e);
+			LOG.error("SQL exception: ", e);
 		}
 		
 		for (int i = 0; i < POOL_SIZE; i++) {
 			Connection connection = null;
 			try {
-				// TODO: implement connection wrapper !!!
-				connection = java.sql.DriverManager.getConnection(
+				connection = DriverManager.getConnection(
 						prop.getProperty(DB_URL),
 						prop.getProperty(DB_USER),
 						prop.getProperty(DB_PASSWORD));
-				LOG.debug("connection created...\n");
-				availibleConnections.offer(connection);
+				ProxyConnection proxyConn = new ProxyConnection(connection);
+				LOG.info("connection created...\n");
+				availibleConnections.offer(proxyConn);
 			} catch (SQLException e) {
-				LOG.debug("SQL exception: ", e);
+				LOG.error("SQL exception: ", e);
 			}
 		}
 	}
 	
-	public Connection getConnection() {
-		Connection connection = null;
+	public ProxyConnection getConnection() {
+		ProxyConnection proxyConnection = null;
 		try {
-			connection = availibleConnections.take();
-			usedConnections.offer(connection);
+			proxyConnection = availibleConnections.take();
+			usedConnections.offer(proxyConnection);
 			LOG.info(String.format("connection given away: availible - %d, used - %d%n",
 					availibleConnections.size(), 
 					usedConnections.size()));
@@ -75,14 +78,15 @@ public enum ConnectionPool {
 			LOG.error("Interrupted exception: ", e);
 			Thread.currentThread().interrupt();
 		}
-		return connection;
+		return proxyConnection;
 	}
 	
-	public void releaseConnection(Connection connection) {
-		usedConnections.remove(connection);
+	public void releaseConnection(ProxyConnection proxyConnection) {
+		usedConnections.remove(proxyConnection);
 		try {
-			availibleConnections.put(connection);
-			LOG.info(String.format("connection released: availible - %d, used - %d%n",
+			availibleConnections.put(proxyConnection);
+			LOG.info(String.format(
+					"connection released: availible - %d, used - %d%n",
 					availibleConnections.size(), 
 					usedConnections.size()));
 		} catch (InterruptedException e) {
@@ -92,10 +96,10 @@ public enum ConnectionPool {
 	}
 	
 	public void findFaculties() {
-		Connection connection = getConnection();
+		ProxyConnection proxyConnection = getConnection();
 		Statement st = null;
 		try {
-			st = connection.createStatement();
+			st = proxyConnection.createStatement();
 			ResultSet rs = st.executeQuery("SELECT * FROM `faculties`");
 			LOG.info("----+----------------------------------------------------+\n");
 			LOG.info(" id |                       faculty                      |\n");
@@ -109,8 +113,8 @@ public enum ConnectionPool {
 		} catch (SQLException e) {
 			LOG.error("SQL exception: ", e);
 		} finally {
-			if (connection != null) {
-				releaseConnection(connection);
+			if (proxyConnection != null) {
+				releaseConnection(proxyConnection);
 			}
 		}
 	}
@@ -132,11 +136,20 @@ public enum ConnectionPool {
 		LOG.info("\nall connections closed...left: " 
 				+ (availibleConnections.size() 
 				+ usedConnections.size()) +"\n");
-		try {
-			java.sql.DriverManager.deregisterDriver(driver);
-			LOG.debug("driver deregistred...\n");
-		} catch (SQLException e) {
-			LOG.debug("SQL exception: ", e);
+		
+		deregisterDriver();
+	}
+	
+	private void deregisterDriver() {
+		Enumeration<java.sql.Driver> drivers = DriverManager.getDrivers();
+		while (drivers.hasMoreElements()) {
+			try {
+				java.sql.Driver driver = drivers.nextElement();
+				DriverManager.deregisterDriver(driver);
+				LOG.info("driver " + driver + " deregistred...\n");
+			} catch (SQLException e) {
+				LOG.error("Drivers have not been registered", e);
+			}
 		}
 	}
 }
